@@ -59,6 +59,8 @@ interface CardLocations {
     technicalDebtCardsCount: number;
 }
 
+type CardsLocations = { [key in CardLocation]?: CardLocations }
+
 function readApplication(): Application {
     var inputs: string[] = readline().split(' ');
     const objectType: string = inputs[0];
@@ -101,27 +103,23 @@ function readCardLocations(): CardLocations {
 
 function countMissingCards(application: Application, cardLocations: CardLocations): number {
     let missingCards = 0;
-    missingCards = (application.trainingNeeded - cardLocations.trainingCardsCount);
-    missingCards += (application.codingNeeded - cardLocations.codingCardsCount);
-    missingCards += (application.dailyRoutineNeeded - cardLocations.dailyRoutineCardsCount);
-    missingCards += (application.taskPrioritizationNeeded - cardLocations.taskPrioritizationCardsCount);
-    missingCards += (application.architectureStudyNeeded - cardLocations.architectureStudyCardsCount);
-    missingCards += (application.continuousDeliveryNeeded - cardLocations.continuousDeliveryCardsCount);
-    missingCards += (application.codeReviewNeeded - cardLocations.codeReviewCardsCount);
-    missingCards += (application.refactoringNeeded - cardLocations.refactoringCardsCount);
-    missingCards -= (cardLocations.bonusCardsCount + cardLocations.technicalDebtCardsCount);
+    missingCards += Math.max(0, (application.trainingNeeded - cardLocations.trainingCardsCount * 2));
+    missingCards += Math.max(0, (application.codingNeeded - cardLocations.codingCardsCount * 2));
+    missingCards += Math.max(0, (application.dailyRoutineNeeded - cardLocations.dailyRoutineCardsCount * 2));
+    missingCards += Math.max(0, (application.taskPrioritizationNeeded - cardLocations.taskPrioritizationCardsCount * 2));
+    missingCards += Math.max(0, (application.architectureStudyNeeded - cardLocations.architectureStudyCardsCount * 2));
+    missingCards += Math.max(0, (application.continuousDeliveryNeeded - cardLocations.continuousDeliveryCardsCount * 2));
+    missingCards += Math.max(0, (application.codeReviewNeeded - cardLocations.codeReviewCardsCount * 2));
+    missingCards += Math.max(0, (application.refactoringNeeded - cardLocations.refactoringCardsCount * 2));
+    missingCards -= Math.max(0, (cardLocations.bonusCardsCount));
     return missingCards;
 }
 
-function findCardLocations(cardsLocations: CardLocations[], location: string): CardLocations {
-    return cardsLocations.find(cardLocation => cardLocation.cardsLocation === location);
-}
-
-function findAppWhichCanBeRealeased(applications: Application[], cardsLocations: CardLocations[], player: Player): Application|undefined {
-    const cardLocations = findCardLocations(cardsLocations, CardLocation.HAND);
+function findAppWhichCanBeRealeased(applications: Application[], cardsLocations: CardsLocations, player: Player): Application|undefined {
+    const cardLocations = cardsLocations[CardLocation.HAND]!;
     const bestApps = applications.filter(application => {
         const missingCards = countMissingCards(application, cardLocations);
-        return missingCards <= 1;
+        return missingCards <= 0;
     });
     return bestApps.length > 0 ? bestApps[0] : undefined;
 }
@@ -139,9 +137,10 @@ while (true) {
         players.push(readPlayer());
     }
     const cardLocationsCount: number = parseInt(readline());
-    const cardsLocations: CardLocations[] = [];
+    const cardsLocations: CardsLocations = {};
     for (let i = 0; i < cardLocationsCount; i++) {
-        cardsLocations.push(readCardLocations());
+        const cardLocation = readCardLocations();
+        cardsLocations[cardLocation.cardsLocation] = cardLocation;
     }
     const possibleMovesCount: number = parseInt(readline());
     for (let i = 0; i < possibleMovesCount; i++) {
@@ -174,7 +173,7 @@ while (true) {
     } else if (gamePhase == "RELEASE") {
         // Write your code here to release an application
         // RANDOM | WAIT | RELEASE applicationId
-        const bestApp: Application = findAppWhichCanBeRealeased(apps, cardsLocations, players[0]);
+        const bestApp: Application|undefined = findAppWhichCanBeRealeased(apps, cardsLocations, players[0]);
         if (bestApp) {
             console.log(`RELEASE ${bestApp.id}`)
         } else {
