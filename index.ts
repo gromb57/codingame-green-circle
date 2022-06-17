@@ -3,6 +3,8 @@
  **/
 declare function readline(): string;
 
+const NB_APPS_TO_RELEASE = 5;
+
 enum CardType {
     TRAINING = 0,
     CODING = 1,
@@ -115,14 +117,40 @@ function countMissingCards(application: Application, cardLocations: CardLocation
     return missingCards;
 }
 
+function countLazyMissingCards(application: Application, cardLocations: CardLocations): number {
+    let missingCards = 0;
+    missingCards += application.trainingNeeded;
+    missingCards += application.codingNeeded;
+    missingCards += application.dailyRoutineNeeded;
+    missingCards += application.taskPrioritizationNeeded;
+    missingCards += application.architectureStudyNeeded;
+    missingCards += application.continuousDeliveryNeeded;
+    missingCards += application.codeReviewNeeded;
+    missingCards += application.refactoringNeeded;
+    missingCards -= cardLocations.trainingCardsCount * 2;
+    missingCards -= cardLocations.codingCardsCount * 2;
+    missingCards -= cardLocations.dailyRoutineCardsCount * 2;
+    missingCards -= cardLocations.taskPrioritizationCardsCount * 2;
+    missingCards -= cardLocations.architectureStudyCardsCount * 2;
+    missingCards -= cardLocations.continuousDeliveryCardsCount * 2;
+    missingCards -= cardLocations.codeReviewCardsCount * 2;
+    missingCards -= cardLocations.refactoringCardsCount * 2;
+    missingCards -= cardLocations.bonusCardsCount * 2;
+    return missingCards;
+}
+
 function findAppWhichCanBeRealeased(applications: Application[], cardsLocations: CardsLocations, player: Player): Application|undefined {
     const cardLocations = cardsLocations[CardLocation.HAND]!;
     const bestApps = applications.filter(application => {
-        const missingCards = countMissingCards(application, cardLocations);
+        const missingCards = (nbReleasedApps < (NB_APPS_TO_RELEASE - 1)) ?
+            countLazyMissingCards(application, cardLocations)
+            : countMissingCards(application, cardLocations);
         return missingCards <= 0;
     });
     return bestApps.length > 0 ? bestApps[0] : undefined;
 }
+
+let nbReleasedApps: number = 0;
 
 // game loop
 while (true) {
@@ -154,32 +182,33 @@ while (true) {
     if (gamePhase == "MOVE") {
         // Write your code here to move your player
         // You must move from your desk
-        console.log(`MOVE ${(players[0].playerLocation + 1) % 8}`)
+        console.log(`MOVE ${(players[0].playerLocation + 1) % 8}`);
     } else if (gamePhase == "GIVE_CARD") {
         // Starting from league 2, you must give a card to the opponent if you move close to them.
         // Write your code here to give a card
         // RANDOM | GIVE cardTypeId
-        console.log("RANDOM")
+        console.log("RANDOM");
     } else if (gamePhase == "THROW_CARD") {
         // Starting from league 3, you must throw 2 cards away every time you go through the administrative task desk.
         // Write your code here to throw a card
         // RANDOM | THROW cardTypeId
-        console.log("RANDOM")
+        console.log("RANDOM");
     } else if (gamePhase == "PLAY_CARD") {
         // Starting from league 2, you can play some cards from your hand.
         // Write your code here to play a card
         // WAIT | RANDOM | TRAINING | CODING | DAILY_ROUTINE | TASK_PRIORITIZATION <cardTypeIdToThrow> <cardTypeIdToTake> | ARCHITECTURE_STUDY | CONTINUOUS_INTEGRATION <cardTypeIdToAutomate> | CODE_REVIEW | REFACTORING
-        console.log("RANDOM")
+        console.log("RANDOM");
     } else if (gamePhase == "RELEASE") {
         // Write your code here to release an application
         // RANDOM | WAIT | RELEASE applicationId
         const bestApp: Application|undefined = findAppWhichCanBeRealeased(apps, cardsLocations, players[0]);
         if (bestApp) {
-            console.log(`RELEASE ${bestApp.id}`)
+            nbReleasedApps++;
+            console.log(`RELEASE ${bestApp.id}`);
         } else {
-            console.log("WAIT")
+            console.log("WAIT");
         }
     } else {
-        console.log("RANDOM")
+        console.log("RANDOM");
     }
 }
